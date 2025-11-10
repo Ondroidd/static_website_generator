@@ -107,3 +107,15 @@ def text_to_textnodes(text: str) -> list['TextNode']:
     link_delimited = split_nodes_link(code_delimited)
     final = split_nodes_image(link_delimited)
     return final
+
+# BLOCK MARKDOWN FUNCTIONS
+def markdown_to_blocks(markdown: str) -> list[str]:
+    blocks = markdown.split("\n\n")
+    final_blocks = []
+    for block in blocks:
+        block = block.strip()
+        if not block:
+            continue
+        final_blocks.append(block)
+
+    return final_blocks
