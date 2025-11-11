@@ -1,5 +1,5 @@
 from htmlnode import LeafNode
-from textnode import TextType, TextNode
+from textnode import TextType, TextNode, BlockType
 import re
 
 def text_node_to_html_node(text_node):
@@ -119,3 +119,20 @@ def markdown_to_blocks(markdown: str) -> list[str]:
         final_blocks.append(block)
 
     return final_blocks
+
+def block_to_block_type(markdown_block: str) -> 'BlockType':
+    lines = markdown_block.split("\n")
+    if re.match(r"#{1,6} ", markdown_block):
+        return BlockType.HEADING
+    elif len(lines) > 1 and markdown_block.startswith("```") and markdown_block.endswith("```"):
+        return BlockType.CODE
+    elif all(line.startswith(">") for line in lines):
+        return BlockType.QUOTE
+    elif all(line.startswith("- ") for line in lines):
+        return BlockType.UNORDERED_LIST
+    else:
+        for i, line in enumerate(lines):
+            num = i + 1
+            if not line.startswith(f"{num}. "):
+                return BlockType.PARAGRAPH
+        return BlockType.ORDERED_LIST

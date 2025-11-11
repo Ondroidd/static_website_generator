@@ -1,8 +1,8 @@
 import unittest
 import re
 
-from textnode import TextNode, TextType
-from functions import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes, markdown_to_blocks
+from textnode import TextNode, TextType, BlockType
+from functions import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes, markdown_to_blocks, block_to_block_type
 
 
 class TestTextNode(unittest.TestCase):
@@ -255,6 +255,48 @@ This is **bolded** paragraph
                 "- This is a list\n- with items",
             ],
         )
+
+    def test_block_to_block_type(self):
+        block_1 = "- This is an unordered list\n- with items\n- and more items"
+        block_2 = "# This is a heading"
+        block_3 = "This is a paragraph of text. It has some **bold** and _italic_ words inside of it."
+        block_4 = "```This is a code block with _italic_ text and `code` here\nThis is the same block on a new line```"
+        block_5 = ">This is a quote block with _italic_ text and `code` here\n>This is the same block on a new line```"
+        block_6 = "1. This is an ordered list\n2. with items\n3. and more items"
+
+        block_type_1 = block_to_block_type(block_1)
+        self.assertEqual(block_type_1, BlockType.UNORDERED_LIST)
+        block_type_2 = block_to_block_type(block_2)
+        self.assertEqual(block_type_2, BlockType.HEADING)
+        block_type_3 = block_to_block_type(block_3)
+        self.assertEqual(block_type_3, BlockType.PARAGRAPH)
+        block_type_4 = block_to_block_type(block_4)
+        self.assertEqual(block_type_4, BlockType.CODE)
+        block_type_5 = block_to_block_type(block_5)
+        self.assertEqual(block_type_5, BlockType.QUOTE)
+        block_type_6 = block_to_block_type(block_6)
+        self.assertEqual(block_type_6, BlockType.ORDERED_LIST)
+
+    def test_block_to_block_type_incorrect(self):
+        block_1 = "- This is not an unordered list\n-- with items\n- and more items"
+        block_2 = "######### This is not a heading"
+        block_3 = "### This is not a paragraph of text. It has some **bold** and _italic_ words inside of it."
+        block_4 = "```This is not a code block with _italic_ text and `code` here..```"
+        block_5 = ">This is not a quote block with _italic_ text and `code` here\n<This is the same block on a new line```"
+        block_6 = "1. This is not an ordered list\n3. with items\n2. and more items"
+
+        block_type_1 = block_to_block_type(block_1)
+        self.assertNotEqual(block_type_1, BlockType.UNORDERED_LIST)
+        block_type_2 = block_to_block_type(block_2)
+        self.assertNotEqual(block_type_2, BlockType.HEADING)
+        block_type_3 = block_to_block_type(block_3)
+        self.assertNotEqual(block_type_3, BlockType.PARAGRAPH)
+        block_type_4 = block_to_block_type(block_4)
+        self.assertNotEqual(block_type_4, BlockType.CODE)
+        block_type_5 = block_to_block_type(block_5)
+        self.assertNotEqual(block_type_5, BlockType.QUOTE)
+        block_type_6 = block_to_block_type(block_6)
+        self.assertNotEqual(block_type_6, BlockType.ORDERED_LIST)
 
 if __name__ == "__main__":
     unittest.main()
