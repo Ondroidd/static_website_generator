@@ -1,4 +1,4 @@
-from htmlnode import LeafNode
+from htmlnode import LeafNode, ParentNode
 from textnode import TextType, TextNode, BlockType
 import re
 
@@ -136,3 +136,112 @@ def block_to_block_type(markdown_block: str) -> 'BlockType':
             if not line.startswith(f"{num}. "):
                 return BlockType.PARAGRAPH
         return BlockType.ORDERED_LIST
+
+def strip_markdown_prefix(block: str, block_type: 'BlockType') -> str:
+    match block_type:
+        case BlockType.PARAGRAPH:
+            text = block.replace("\n", " ")
+            return text
+        case BlockType.HEADING:
+            matches = re.match(r"#{1,6} ", block)
+            prefix = matches.group(0)
+            text = block[len(prefix):]
+            return text
+        case BlockType.QUOTE:
+            lines = block.split("\n")
+            stripped_lines = []
+            for line in lines:
+                stripped_lines.append(line[1:].lstrip())
+            text = " ".join(stripped_lines)
+            return text
+        case BlockType.UNORDERED_LIST:
+            lines = block.split("\n")
+            stripped_lines = []
+            for line in lines:
+                stripped_lines.append(line[2:])
+            text = "\n".join(stripped_lines)
+            return text
+        case BlockType.ORDERED_LIST:
+            lines = block.split("\n")
+            stripped_lines = []
+            for line in lines:
+                idx = line.find(". ")
+                stripped_lines.append(line[idx+2:])
+            text = "\n".join(stripped_lines)
+            return text
+        case _:
+            raise ValueError(f"Invalid block type: {block_type}")
+
+def process_heading(block: str) -> int:
+    matches = re.match(r"#{1,6} ", block)
+    prefix = matches.group(0)
+    level = prefix.count("#")
+    return level
+
+def process_code(block: str) -> 'ParentNode':
+    first_newline = block.find('\n')
+    last_newline = block.rfind('\n')
+    inner = block[first_newline+1:last_newline+1]
+    text_node = LeafNode(None, inner)
+    code_node = ParentNode("code", [text_node])
+    pre_node = ParentNode("pre", [code_node])
+    return pre_node
+
+def block_to_html(block: str, children: list['LeafNode'], block_type: 'BlockType') -> 'HTMLNode':
+    match block_type:
+        case BlockType.PARAGRAPH:
+            return ParentNode("p", children)
+        case BlockType.HEADING:
+            level = process_heading(block)
+            return ParentNode(f"h{level}", children)
+        case BlockType.QUOTE:
+            return ParentNode("blockquote", children)
+        case BlockType.UNORDERED_LIST:
+            return ParentNode("ul", children)
+        case BlockType.ORDERED_LIST:
+            return ParentNode("ol", children)
+        case _:
+            raise ValueError(f"Invalid block type: {block_type}")
+
+def block_to_children(html_node_text: str) -> list['LeafNode']:
+    children = []                                                       # initialize empty list
+    text_nodes = text_to_textnodes(html_node_text)                      # convert the block text into inline text nodes
+    for text_node in text_nodes:                                        # convert text nodes to html nodes and return them in a list as children
+        children.append(text_node_to_html_node(text_node))
+    return children
+
+def list_items_to_children(block: str, block_type: 'BlockType') -> list['ParentNode']:
+    # Strip the markdown prefix from each line
+    stripped = strip_markdown_prefix(block, block_type)
+
+    # Split into individual lines
+    lines = stripped.split("\n")
+
+    list_items = []
+    for line in lines:
+        children = block_to_children(line)
+        node = ParentNode("li", children)
+        list_items.append(node)
+
+    return list_items
+
+def markdown_to_html_node(markdown: str) -> 'ParentNode':
+    nodes = []
+    blocks = markdown_to_blocks(markdown)                               # split markdown into blocks
+    for block in blocks:                                                # loop over each block
+        block_type = block_to_block_type(block)                         # determine block type
+        if block_type is BlockType.CODE:                                # special case for CODE - no children
+            html_node = process_code(block)
+            nodes.append(html_node)
+            continue
+        if block_type is BlockType.ORDERED_LIST or block_type is BlockType.UNORDERED_LIST:
+            children = list_items_to_children(block, block_type)
+            html_node = block_to_html(block, children, block_type)
+            nodes.append(html_node)
+            continue
+        stripped = strip_markdown_prefix(block, block_type)
+        children = block_to_children(stripped)                          # get child htmlnode objects from the block
+        html_node = block_to_html(block, children, block_type)       # create parent html node
+        nodes.append(html_node)
+
+    return ParentNode("div", nodes)                                     # return the final HTML node
