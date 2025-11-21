@@ -1,6 +1,8 @@
 from htmlnode import LeafNode, ParentNode
 from textnode import TextType, TextNode, BlockType
+import os
 import re
+import shutil
 
 def text_node_to_html_node(text_node):
     match text_node.text_type:
@@ -101,6 +103,10 @@ def split_nodes_link(old_nodes: list['TextNode']) -> list['TextNode']:
 
 def text_to_textnodes(text: str) -> list['TextNode']:
     initial_node = TextNode(text, TextType.TEXT)
+def text_to_textnodes(text: str) -> list['TextNode']:
+    initial_node = TextNode(text, TextType.TEXT)
+def text_to_textnodes(text: str) -> list['TextNode']:
+    initial_node = TextNode(text, TextType.TEXT)
     bold_delimited = split_nodes_delimiter([initial_node], "**", TextType.BOLD)
     italic_delimited = split_nodes_delimiter(bold_delimited, "_", TextType.ITALIC)
     code_delimited = split_nodes_delimiter(italic_delimited, "`", TextType.CODE)
@@ -195,10 +201,6 @@ def block_to_html(block: str, children: list['LeafNode'], block_type: 'BlockType
             level = process_heading(block)
             return ParentNode(f"h{level}", children)
         case BlockType.QUOTE:
-            return ParentNode("blockquote", children)
-        case BlockType.UNORDERED_LIST:
-            return ParentNode("ul", children)
-        case BlockType.ORDERED_LIST:
             return ParentNode("ol", children)
         case _:
             raise ValueError(f"Invalid block type: {block_type}")
@@ -241,7 +243,47 @@ def markdown_to_html_node(markdown: str) -> 'ParentNode':
             continue
         stripped = strip_markdown_prefix(block, block_type)
         children = block_to_children(stripped)                          # get child htmlnode objects from the block
-        html_node = block_to_html(block, children, block_type)       # create parent html node
+        html_node = block_to_html(block, children, block_type)          # create parent html node
         nodes.append(html_node)
 
     return ParentNode("div", nodes)                                     # return the final HTML node
+
+# COPY STATIC CONTENT
+def copy_dir(src: str, dst: str) -> None:
+    # list the contents of the src dir and iterate over them
+    files = os.listdir(src)
+    for file in files:
+        # log the full path of the src and dst files
+        file_path_src = os.path.join(src, file)
+        file_path_dst = os.path.join(dst, file)
+
+        # check if file is a regular file or directory - regular file -> copy, directory -> recurse
+        if os.path.isfile(file_path_src):
+            # copy src file to dst
+            print(f"copying {file_path_src} to {file_path_dst}")
+            shutil.copy(file_path_src, file_path_dst)
+        elif os.path.isdir(file_path_src):
+            # create the new dir at the destination if it does not exist already
+            if not os.path.exists(file_path_dst):
+                os.mkdir(file_path_dst)
+            # recurse
+            copy_dir(file_path_src, file_path_dst)
+        else:
+            print(f"File type not supported. The source file is neither a regular file nor directory.")
+
+def copy_static_to_public(source: str, destination: str) -> None:
+    src = f"{source}"
+    dst = f"{destination}"
+    # clean destination dir
+    try:
+        shutil.rmtree(dst)
+        print(f'Directory "{dst}" deleted successfully.')
+    except FileNotFoundError:
+        pass
+
+    # create dst dir
+    os.mkdir(dst)
+
+    # copy src content to dst
+    copy_dir(src, dst)
+
