@@ -201,7 +201,7 @@ def block_to_html(block: str, children: list['LeafNode'], block_type: 'BlockType
             level = process_heading(block)
             return ParentNode(f"h{level}", children)
         case BlockType.QUOTE:
-            return ParentNode("ol", children)
+            return ParentNode("blockquote", children)
         case _:
             raise ValueError(f"Invalid block type: {block_type}")
 
@@ -238,7 +238,10 @@ def markdown_to_html_node(markdown: str) -> 'ParentNode':
             continue
         if block_type is BlockType.ORDERED_LIST or block_type is BlockType.UNORDERED_LIST:
             children = list_items_to_children(block, block_type)
-            html_node = block_to_html(block, children, block_type)
+            if block_type is BlockType.ORDERED_LIST:
+                html_node = ParentNode("ol", children)
+            else:
+                html_node = ParentNode("ul", children)
             nodes.append(html_node)
             continue
         stripped = strip_markdown_prefix(block, block_type)
