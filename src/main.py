@@ -1,11 +1,11 @@
 from textnode import TextNode,TextType
-from functions import copy_static_to_public
+from functions import copy_static_to_public, generate_page
 
 def main():
-    test_node = TextNode("This is some anchor text", TextType.LINK, "https://www.boot.dev")
-    print(test_node)
 
     copy_static_to_public("static", "public")
+
+    generate_page("content/index.md", "template.html", "public/index.html")
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,7 @@
 import unittest
 
 from htmlnode import HTMLNode, ParentNode 
-from functions import markdown_to_html_node 
+from functions import markdown_to_html_node, extract_title 
 
 class TestMarkdown(unittest.TestCase):
     def test_paragraph(self):
@@ -99,6 +99,11 @@ the **same** even with inline stuff
             html,
             "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
         )
+    
+    def test_extract_title(self):
+        md = "./content/index.md"
+        title = extract_title(md)
+        self.assertEqual(title, "Tolkien Fan Club")
 
 if __name__ == "__main__":
     unittest.main()

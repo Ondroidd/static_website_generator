@@ -290,3 +290,28 @@ def copy_static_to_public(source: str, destination: str) -> None:
     # copy src content to dst
     copy_dir(src, dst)
 
+# EXTRACT PAGE TITLE
+def extract_title(markdown: str) -> str:
+    lines = markdown.split("\n")
+    matches = re.match(r"# ", lines[0])
+    if not matches:
+        raise Exception(f"Title not found.")
+    h1 = matches.group(0)
+    title = lines[0][len(h1):].rstrip()
+    return title
+
+def generate_page(from_path: str, template_path: str, dest_path: str) -> str:
+    print(f"Generating page from {from_path} to {dest_path} using {template_path}")
+    with open(from_path, "r") as md:
+        markdown = md.read()
+    with open(template_path, "r") as tp:
+        template = tp.read()
+    html_node = markdown_to_html_node(markdown)
+    content = html_node.to_html()
+    title = extract_title(markdown)
+    template = template.replace("{{ Title }}", title)
+    template = template.replace("{{ Content }}", content)
+    dest_dir = os.path.dirname(dest_path)
+    os.makedirs(dest_dir, exist_ok=True)
+    with open(dest_path, "w") as html:
+        html.write(template)
