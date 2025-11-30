@@ -290,7 +290,6 @@ def copy_static_to_public(source: str, destination: str) -> None:
     # copy src content to dst
     copy_dir(src, dst)
 
-# EXTRACT PAGE TITLE
 def extract_title(markdown: str) -> str:
     lines = markdown.split("\n")
     matches = re.match(r"# ", lines[0])
@@ -300,18 +299,48 @@ def extract_title(markdown: str) -> str:
     title = lines[0][len(h1):].rstrip()
     return title
 
-def generate_page(from_path: str, template_path: str, dest_path: str) -> str:
-    print(f"Generating page from {from_path} to {dest_path} using {template_path}")
-    with open(from_path, "r") as md:
-        markdown = md.read()
-    with open(template_path, "r") as tp:
-        template = tp.read()
-    html_node = markdown_to_html_node(markdown)
-    content = html_node.to_html()
-    title = extract_title(markdown)
-    template = template.replace("{{ Title }}", title)
-    template = template.replace("{{ Content }}", content)
-    dest_dir = os.path.dirname(dest_path)
-    os.makedirs(dest_dir, exist_ok=True)
-    with open(dest_path, "w") as html:
-        html.write(template)
+def generate_pages_recursive(dir_path_content: str, template_path: str, dest_dir_path: str) -> None:
+    files = os.listdir(dir_path_content)
+    
+    for file in files:
+        file_path_src = os.path.join(dir_path_content, file)
+        file_path_dst = os.path.join(dest_dir_path, file)
+        
+        if os.path.isfile(file_path_src):
+            # Only process .md files
+            if not file.endswith('.md'):
+                continue
+            
+            # Change .md to .html for destination
+            file_path_dst = file_path_dst.replace('.md', '.html')
+            
+            print(f"Generating page from {file_path_src} to {file_path_dst} using {template_path}")
+            
+            # Read markdown
+            with open(file_path_src, "r") as md:
+                markdown = md.read()
+            
+            # Read template
+            with open(template_path, "r") as tp:
+                template = tp.read()
+            
+            # Convert and extract
+            html_node = markdown_to_html_node(markdown)
+            content = html_node.to_html()
+            title = extract_title(markdown)
+            
+            # Replace placeholders
+            template = template.replace("{{ Title }}", title)
+            template = template.replace("{{ Content }}", content)
+            
+            # Create destination directory
+            dest_dir = os.path.dirname(file_path_dst)
+            os.makedirs(dest_dir, exist_ok=True)
+            
+            # Write HTML
+            with open(file_path_dst, "w") as html:
+                html.write(template)
+                
+        elif os.path.isdir(file_path_src):
+            # Recurse into subdirectory
+            generate_pages_recursive(file_path_src, template_path, file_path_dst)
