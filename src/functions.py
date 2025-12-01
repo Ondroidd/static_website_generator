@@ -299,7 +299,7 @@ def extract_title(markdown: str) -> str:
     title = lines[0][len(h1):].rstrip()
     return title
 
-def generate_pages_recursive(dir_path_content: str, template_path: str, dest_dir_path: str) -> None:
+def generate_pages_recursive(dir_path_content: str, template_path: str, dest_dir_path: str, basepath: str) -> None:
     files = os.listdir(dir_path_content)
     
     for file in files:
@@ -332,6 +332,8 @@ def generate_pages_recursive(dir_path_content: str, template_path: str, dest_dir
             # Replace placeholders
             template = template.replace("{{ Title }}", title)
             template = template.replace("{{ Content }}", content)
+            template = template.replace('href="/', f'href="{basepath}"')
+            template = template.replace('src="/', f'src="{basepath}"')
             
             # Create destination directory
             dest_dir = os.path.dirname(file_path_dst)
@@ -343,4 +345,4 @@ def generate_pages_recursive(dir_path_content: str, template_path: str, dest_dir
                 
         elif os.path.isdir(file_path_src):
             # Recurse into subdirectory
-            generate_pages_recursive(file_path_src, template_path, file_path_dst)
+            generate_pages_recursive(file_path_src, template_path, file_path_dst, basepath)
