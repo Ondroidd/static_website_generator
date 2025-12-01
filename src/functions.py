@@ -332,8 +332,8 @@ def generate_pages_recursive(dir_path_content: str, template_path: str, dest_dir
             # Replace placeholders
             template = template.replace("{{ Title }}", title)
             template = template.replace("{{ Content }}", content)
-            template = template.replace('href="/', f'href="{basepath}"')
-            template = template.replace('src="/', f'src="{basepath}"')
+            template = template.replace('href="/', f'href="{basepath}')
+            template = template.replace('src="/', f'src="{basepath}')
             
             # Create destination directory
             dest_dir = os.path.dirname(file_path_dst)
